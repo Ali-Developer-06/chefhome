@@ -31,7 +31,7 @@ const HomePage = () => {
       {/* Clean Hero Section */}
       <section className="relative h-full pb-5 flex items-center justify-center overflow-hidden bg-white">
         {/* Minimal Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100"></div>
+        <div className="absolute inset-0 from-slate-50 to-slate-100"></div>
         
         <div className="relative z-10 text-center px-4 max-w-4xl">
           <motion.div
@@ -43,7 +43,7 @@ const HomePage = () => {
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
-              className="inline-flex items-center mt-3 px-4 py-2 rounded-full bg-slate-100 text-slate-700 text-sm font-medium mb-6 border border-slate-200">
+              className="inline-flex items-center mt-3 px-4 py-2 rounded-full bg-slate-200 text-slate-800 text-sm font-medium mb-6 border border-slate-200">
               <MdOutlineVerified className="mr-2" />
               Premium Private Chef Experience
             </motion.span>
