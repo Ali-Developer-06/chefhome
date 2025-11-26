@@ -10,7 +10,6 @@ import {
 } from 'react-icons/gi';
 import { 
   MdOutlineStar,
-  MdOutlineVerified,
   MdOutlineTimer,
   MdClose,
   MdSearch,
@@ -42,19 +41,38 @@ const MenuPage = () => {
   const [selectedDish, setSelectedDish] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cart, setCart] = useState({});
+  const [isClient, setIsClient] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
 
-  // Load cart from localStorage on component mount
+  // Client-side detection and window width
   useEffect(() => {
-    const savedCart = localStorage.getItem('chefHomeCart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    setIsClient(true);
+    setWindowWidth(window.innerWidth);
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Save cart to localStorage whenever cart changes
+  // Load cart from localStorage on component mount (client-side only)
   useEffect(() => {
-    localStorage.setItem('chefHomeCart', JSON.stringify(cart));
-  }, [cart]);
+    if (isClient) {
+      const savedCart = localStorage.getItem('chefHomeCart');
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    }
+  }, [isClient]);
+
+  // Save cart to localStorage whenever cart changes (client-side only)
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('chefHomeCart', JSON.stringify(cart));
+    }
+  }, [cart, isClient]);
 
   // Mock data for dishes
   useEffect(() => {
@@ -75,8 +93,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: true,
         chefSpecial: true,
-        calories: 420,
-        image: "/api/placeholder/400/300"
+        calories: 420
       },
       {
         id: 2,
@@ -94,8 +111,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: false,
         chefSpecial: true,
-        calories: 580,
-        image: "/api/placeholder/400/300"
+        calories: 580
       },
       {
         id: 3,
@@ -113,8 +129,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: true,
         chefSpecial: false,
-        calories: 320,
-        image: "/api/placeholder/400/300"
+        calories: 320
       },
       {
         id: 4,
@@ -132,8 +147,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: false,
         chefSpecial: true,
-        calories: 480,
-        image: "/api/placeholder/400/300"
+        calories: 480
       },
       {
         id: 5,
@@ -151,8 +165,7 @@ const MenuPage = () => {
         spicy: true,
         vegetarian: false,
         chefSpecial: false,
-        calories: 290,
-        image: "/api/placeholder/400/300"
+        calories: 290
       },
       {
         id: 6,
@@ -170,8 +183,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: true,
         chefSpecial: false,
-        calories: 180,
-        image: "/api/placeholder/400/300"
+        calories: 180
       },
       {
         id: 7,
@@ -189,8 +201,7 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: false,
         chefSpecial: true,
-        calories: 520,
-        image: "/api/placeholder/400/300"
+        calories: 520
       },
       {
         id: 8,
@@ -208,16 +219,12 @@ const MenuPage = () => {
         spicy: false,
         vegetarian: true,
         chefSpecial: false,
-        calories: 240,
-        image: "/api/placeholder/400/300"
+        calories: 240
       }
     ];
     
     setDishes(mockDishes);
     setFilteredDishes(mockDishes);
-    
-    // Save dishes to localStorage for order page
-    localStorage.setItem('dishes', JSON.stringify(mockDishes));
   }, []);
 
   // Filter and sort dishes
@@ -265,25 +272,24 @@ const MenuPage = () => {
   const openDishModal = (dish) => {
     setSelectedDish(dish);
     setIsModalOpen(true);
-    document.body.style.overflow = 'hidden';
+    if (isClient) {
+      document.body.style.overflow = 'hidden';
+    }
   };
 
   const closeDishModal = () => {
     setIsModalOpen(false);
     setSelectedDish(null);
-    document.body.style.overflow = 'unset';
+    if (isClient) {
+      document.body.style.overflow = 'unset';
+    }
   };
 
   const addToCart = (dishId) => {
-    setCart(prev => {
-      const newCart = {
-        ...prev,
-        [dishId]: (prev[dishId] || 0) + 1
-      };
-      // Save to localStorage immediately
-      localStorage.setItem('cart', JSON.stringify(newCart));
-      return newCart;
-    });
+    setCart(prev => ({
+      ...prev,
+      [dishId]: (prev[dishId] || 0) + 1
+    }));
   };
 
   const updateCartQuantity = (dishId, quantity) => {
@@ -291,20 +297,16 @@ const MenuPage = () => {
       const newCart = { ...cart };
       delete newCart[dishId];
       setCart(newCart);
-      localStorage.setItem('cart', JSON.stringify(newCart));
     } else {
-      setCart(prev => {
-        const newCart = {
-          ...prev,
-          [dishId]: quantity
-        };
-        localStorage.setItem('cart', JSON.stringify(newCart));
-        return newCart;
-      });
+      setCart(prev => ({
+        ...prev,
+        [dishId]: quantity
+      }));
     }
   };
 
   const getCartItemCount = () => {
+    if (!isClient) return 0;
     return Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
   };
 
@@ -316,6 +318,9 @@ const MenuPage = () => {
   ];
 
   const cuisines = ['all', 'Italian', 'French', 'Japanese', 'Spanish', 'Thai'];
+
+  // Show filters panel based on window width
+  const shouldShowFilters = showFilters || windowWidth >= 1024;
 
   return (
     <div className="min-h-screen bg-white">
@@ -406,7 +411,7 @@ const MenuPage = () => {
 
         {/* Filters Panel */}
         <AnimatePresence>
-          {(showFilters || window.innerWidth >= 1024) && (
+          {shouldShowFilters && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -654,12 +659,12 @@ const DishCard = ({ dish, isFavorite, cartQuantity, onToggleFavorite, onViewDeta
           <div className="flex gap-3">
             <button 
               onClick={onViewDetails}
-              className="px-3 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:border-slate-400 transition-colors">
+              className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-xl font-semibold hover:border-slate-400 transition-colors">
               Details
             </button>
             <button 
               onClick={onAddToCart}
-              className="px-3 py-2 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors">
+              className="flex-1 bg-slate-900 text-white py-2 rounded-xl font-semibold hover:bg-slate-800 transition-colors">
               Add to Cart
             </button>
           </div>
